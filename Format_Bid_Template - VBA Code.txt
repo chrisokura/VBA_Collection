@@ -16,12 +16,6 @@ Public t As Integer
 
 Sub FormatBidTemplate()
 
-'Dim password As String
-' password = InputBox("Enter Password")
-'If password <> "Wilson2021!" Then
- ' MsgBox "Incorrect password, code not executed"
-  'Exit Sub
-' End If
 
 Set BidWB = Workbooks("Wilson Bid Template - CO.xlsm")
 

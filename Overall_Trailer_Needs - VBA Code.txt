@@ -1,0 +1,360 @@
+Sub Overall_Trailer_Needs_V2()
+    
+  Dim StartTime As Double
+  Dim SecondsElapsed As Double
+  Dim lastrow As Long
+  Dim firstrow As Integer
+  Dim carrier As String
+  StartTime = Timer
+  
+  If Sheets(1).AutoFilterMode Then Sheet1.AutoFilterMode = False
+  Application.ScreenUpdating = False
+  
+  
+  ' setting firstrow and finding lastrow
+  firstrow = 2
+  lastrow = Cells(Rows.Count, 1).End(xlUp).Row
+  lastrow = lastrow - 2
+  Cells(lastrow + 2, 1).EntireRow.Select
+  Selection.Delete
+
+   ' bold first row and apply filters
+    Cells(1, 1).Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Selection.Font.Bold = True
+    Selection.AutoFilter
+
+    ' Autofit columns, center align all columns except for col A
+    Columns("A:M").Select
+    Selection.Columns.AutoFit
+    Columns("B:M").Select
+    With Selection
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlBottom
+        .WrapText = False
+        .Orientation = 0
+        .AddIndent = False
+        .IndentLevel = 0
+        .ShrinkToFit = False
+        .ReadingOrder = xlContext
+        .MergeCells = False
+    End With
+    
+    Cells(1, 2).EntireColumn.Select
+    Selection.Insert
+    For i = firstrow To lastrow
+      carrier = Cells(i, 1).Value
+      If carrier = "ASANCHEZ TRUCKING INC." Then
+        Cells(i, 2).Value = ""
+      ElseIf carrier = "ASANCHEZ TRUCKING INC" Then
+        Cells(i, 2).Value = ""
+      ElseIf carrier = "ASHLEY 24 FT TRAILER" Then
+        Cells(i, 2).Value = ""
+      ElseIf carrier = "ASHLEY 28 FT TRAILER" Then
+        Cells(i, 2).Value = ""
+      ElseIf carrier = "ASHLEY 48 FT TRAILER" Then
+        Cells(i, 2).Value = ""
+      ElseIf carrier = "ASHLEY 53 FT TRAILER" Then
+        Cells(i, 2).Value = ""
+      ElseIf carrier = "RAELY TRUCKING INC" Then
+        Cells(i, 2).Value = ""
+      ElseIf carrier = "RAELY TRUCKING INC." Then
+        Cells(i, 2).Value = ""
+      ElseIf carrier = "TONY'S TRUCKING" Then
+        Cells(i, 2).Value = ""
+      ElseIf carrier = "TONYS TRUCKING" Then
+        Cells(i, 2).Value = ""
+      Else
+        Cells(i, 2).Value = 1
+      End If
+    Next i
+    
+    Cells(1, 2).Select
+    ActiveWorkbook.Worksheets("Export").AutoFilter.Sort.SortFields.Clear
+    ActiveWorkbook.Worksheets("Export").AutoFilter.Sort.SortFields.Add2 Key:= _
+        Range("B1"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+        xlSortNormal
+    With ActiveWorkbook.Worksheets("Export").AutoFilter.Sort
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+    
+    Dim new_last_row As Long
+    new_last_row = Cells(Rows.Count, 2).End(xlUp).Row
+
+    Cells(1, 2).Select
+    ActiveSheet.Range("$A$1:$N$10000").AutoFilter Field:=2, Criteria1:="<>"
+    Selection.EntireColumn.Hidden = True
+    'Cells(1, 2).EntireColumn.Select
+    ' Selection.Delete
+    
+    'sort a to z
+    ActiveWorkbook.Worksheets("Export").AutoFilter.Sort.SortFields.Clear
+    ActiveWorkbook.Worksheets("Export").AutoFilter.Sort.SortFields.Add2 Key:= _
+        Range("C1"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+        xlSortNormal
+    With ActiveWorkbook.Worksheets("Export").AutoFilter.Sort
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+
+    ' Add sheet for each Warehouse
+    Sheets.Add After:=ActiveSheet
+    Sheets(2).Select
+    Sheets(2).Name = "Advance"
+    Sheets.Add After:=ActiveSheet
+    Sheets(3).Select
+    Sheets(3).Name = "Arcadia"
+    Sheets.Add After:=ActiveSheet
+    Sheets(4).Select
+    Sheets(4).Name = "Ecru"
+    Sheets.Add After:=ActiveSheet
+    Sheets(5).Select
+    Sheets(5).Name = "Etna"
+    Sheets.Add After:=ActiveSheet
+    Sheets(6).Select
+    Sheets(6).Name = "Leesport"
+    Sheets.Add After:=ActiveSheet
+    Sheets(7).Select
+    Sheets(7).Name = "Mesquite"
+    Sheets.Add After:=ActiveSheet
+    Sheets(8).Select
+    Sheets(8).Name = "Redlands"
+    Sheets.Add After:=ActiveSheet
+    Sheets(9).Select
+    Sheets(9).Name = "Saltillo"
+    Sheets.Add After:=ActiveSheet
+    Sheets(10).Select
+    Sheets(10).Name = "Tacoma"
+    
+    Sheets(1).Select
+      
+      ' highlight cols L, M, N rows if values < 0
+      ' highlight red
+      For l = firstrow To new_last_row
+        If Cells(l, 12).Value < 0 Then
+          Cells(l, 12).Select
+          With Selection.Interior
+            .Pattern = xlSolid
+            .PatternColorIndex = xlAutomatic
+            .Color = 8224255
+            .TintAndShade = 0
+            .PatternTintAndShade = 0
+          End With
+          With Selection.Font
+            .Color = -16777024
+            .TintAndShade = 0
+          End With
+        End If
+        If Cells(l, 13).Value < 0 Then
+          Cells(l, 13).Select
+          With Selection.Interior
+            .Pattern = xlSolid
+            .PatternColorIndex = xlAutomatic
+            .Color = 8224255
+            .TintAndShade = 0
+            .PatternTintAndShade = 0
+          End With
+          With Selection.Font
+            .Color = -16777024
+            .TintAndShade = 0
+          End With
+        End If
+        If Cells(l, 14).Value < 0 Then
+          Cells(l, 14).Select
+          With Selection.Interior
+            .Pattern = xlSolid
+            .PatternColorIndex = xlAutomatic
+            .Color = 8224255
+            .TintAndShade = 0
+            .PatternTintAndShade = 0
+          End With
+          With Selection.Font
+            .Color = -16777024
+            .TintAndShade = 0
+          End With
+        End If
+    Next l
+    
+    For j = firstrow To new_last_row
+      Sheets(1).Select
+      ' Copy row to paste onto other sheet
+      Cells(j, 1).EntireRow.Select
+      Selection.Copy
+      Dim lastrow_whse_sheet As Long
+    ' Paste row to another sheet
+      If Cells(j, 3).Value = "17" Then
+        Sheets("Advance").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      ElseIf Cells(j, 3).Value = "1" Then
+        Sheets("Arcadia").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      ElseIf Cells(j, 3).Value = "ECR" Then
+        Sheets("Ecru").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      ElseIf Cells(j, 3).Value = "70" Then
+        Sheets("Etna").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      ElseIf Cells(j, 3).Value = "15" Then
+        Sheets("Leesport").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      ElseIf Cells(j, 3).Value = "28" Then
+        Sheets("Mesquite").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      ElseIf Cells(j, 3).Value = "5" Then
+        Sheets("Redlands").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      ElseIf Cells(j, 3).Value = "19" Then
+        Sheets("Saltillo").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      ElseIf Cells(j, 3).Value = "42" Then
+        Sheets("Tacoma").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      End If
+      Next j
+      
+      Dim border_rng As Range
+      'copy and paste headers onto each sheet
+      For k = 2 To 10
+        Sheets(1).Select
+        Cells(1, 1).EntireRow.Select
+        Selection.Copy
+        Sheets(k).Select
+        Cells(1, 1).Select
+        ActiveSheet.Paste
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Columns("A:P").Select
+        Selection.Columns.AutoFit
+        Range("A1:M1").Select
+        Range("M1").Activate
+        Application.CutCopyMode = False
+        Selection.AutoFilter
+        Set border_rng = Range(Cells(1, 1), Cells(lastrow_whse_sheet, 13))
+        border_rng.Activate
+        border_rng.Select
+        
+        Selection.Borders(xlDiagonalDown).LineStyle = xlNone
+        Selection.Borders(xlDiagonalUp).LineStyle = xlNone
+        With Selection.Borders(xlEdgeLeft)
+            .LineStyle = xlContinuous
+            .ColorIndex = 0
+            .TintAndShade = 0
+            .Weight = xlThin
+        End With
+        With Selection.Borders(xlEdgeTop)
+            .LineStyle = xlContinuous
+            .ColorIndex = 0
+            .TintAndShade = 0
+            .Weight = xlThin
+        End With
+        With Selection.Borders(xlEdgeBottom)
+            .LineStyle = xlContinuous
+            .ColorIndex = 0
+            .TintAndShade = 0
+            .Weight = xlThin
+        End With
+        With Selection.Borders(xlEdgeRight)
+            .LineStyle = xlContinuous
+            .ColorIndex = 0
+            .TintAndShade = 0
+            .Weight = xlThin
+        End With
+            With Selection.Borders(xlInsideVertical)
+        .LineStyle = xlContinuous
+        .ColorIndex = 0
+        .TintAndShade = 0
+        .Weight = xlThin
+    End With
+    With Selection.Borders(xlInsideHorizontal)
+        .LineStyle = xlContinuous
+        .ColorIndex = 0
+        .TintAndShade = 0
+        .Weight = xlThin
+    End With
+    Rows("2:2").Select
+    ActiveWindow.FreezePanes = True
+    Cells(1, 1).Select
+  Next k
+    Sheets(1).Activate
+    Cells(1, 1).Select
+    
+    Dim border_rng_export_sheet As Range
+    Set border_rng_export_sheet = Range(Cells(1, 1), Cells(lastrow, 14))
+    border_rng_export_sheet.Activate
+    border_rng_export_sheet.Select
+        
+      Selection.Borders(xlDiagonalDown).LineStyle = xlNone
+      Selection.Borders(xlDiagonalUp).LineStyle = xlNone
+      With Selection.Borders(xlEdgeLeft)
+          .LineStyle = xlContinuous
+          .ColorIndex = 0
+          .TintAndShade = 0
+          .Weight = xlThin
+      End With
+      With Selection.Borders(xlEdgeTop)
+          .LineStyle = xlContinuous
+          .ColorIndex = 0
+          .TintAndShade = 0
+          .Weight = xlThin
+      End With
+      With Selection.Borders(xlEdgeBottom)
+          .LineStyle = xlContinuous
+          .ColorIndex = 0
+          .TintAndShade = 0
+          .Weight = xlThin
+      End With
+      With Selection.Borders(xlEdgeRight)
+          .LineStyle = xlContinuous
+          .ColorIndex = 0
+          .TintAndShade = 0
+          .Weight = xlThin
+      End With
+          With Selection.Borders(xlInsideVertical)
+      .LineStyle = xlContinuous
+      .ColorIndex = 0
+      .TintAndShade = 0
+      .Weight = xlThin
+    End With
+    With Selection.Borders(xlInsideHorizontal)
+      .LineStyle = xlContinuous
+      .ColorIndex = 0
+      .TintAndShade = 0
+      .Weight = xlThin
+    End With
+    Rows("2:2").Select
+    ActiveWindow.FreezePanes = True
+    Cells(1, 1).Select
+    
+    
+  'Determine how many seconds code took to run
+  SecondsElapsed = Round(Timer - StartTime, 2)
+
+  'Notify user in seconds
+  MsgBox "This code ran successfully in " & SecondsElapsed & " seconds", vbInformation
+  
+
+End Sub

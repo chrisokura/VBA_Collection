@@ -1,0 +1,245 @@
+Sub Loads_Not_Assigned_Carrier_V3()
+
+  Dim StartTime As Double
+  Dim SecondsElapsed As Double
+  Dim lastrow As Long
+  Dim firstrow As Integer
+  Dim carrier As String
+  StartTime = Timer
+  
+  If Sheets(1).AutoFilterMode Then Sheet1.AutoFilterMode = False
+  
+  Application.ScreenUpdating = False
+  
+  ' setting firstrow and finding lastrow
+  firstrow = 2
+  lastrow = Cells(Rows.Count, 1).End(xlUp).Row
+  lastrow = lastrow - 3
+  Cells(lastrow + 3, 1).EntireRow.Select
+  Selection.Delete
+  Cells(lastrow + 2, 1).EntireRow.Select
+  Selection.Delete
+  Cells(lastrow + 1, 1).EntireRow.Select
+  Selection.Delete
+  
+  ' delete cols c,f,g,i,j,k,l,m,o
+  'delete cubes
+  Cells(1, 15).EntireColumn.Select
+  Selection.Delete
+  'delete pieces remaining
+  Cells(1, 13).EntireColumn.Select
+  Selection.Delete
+  'delete pieces loaded
+  Cells(1, 12).EntireColumn.Select
+  Selection.Delete
+  ' delete pieces routed
+  Cells(1, 11).EntireColumn.Select
+  Selection.Delete
+  'delete % complete
+  Cells(1, 10).EntireColumn.Select
+  Selection.Delete
+  'delete latest delivery
+  Cells(1, 9).EntireColumn.Select
+  Selection.Delete
+  'delete Dr#
+  Cells(1, 7).EntireColumn.Select
+  Selection.Delete
+  'delete trip status
+  Cells(1, 6).EntireColumn.Select
+  Selection.Delete
+  'delete carrier
+  Cells(1, 3).EntireColumn.Select
+  Selection.Delete
+
+
+    'format column E
+    Columns("E:E").Select
+    Range("E5").Activate
+    Selection.NumberFormat = "m/d/yy h:mm;@"
+    
+    'bold first row apply filters
+    Rows("2:2").Select
+    ActiveWindow.FreezePanes = True
+    Range("A1").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Selection.Font.Bold = True
+    Selection.AutoFilter
+    
+    'sort dispatch/date time oldest to newest, sort warehous a to z
+    ActiveWorkbook.Worksheets("Export").AutoFilter.sort.SortFields.Clear
+    ActiveWorkbook.Worksheets("Export").AutoFilter.sort.SortFields.Add2 Key:= _
+        Range("E1"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+        xlSortNormal
+    With ActiveWorkbook.Worksheets("Export").AutoFilter.sort
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+    ActiveWorkbook.Worksheets("Export").AutoFilter.sort.SortFields.Clear
+    ActiveWorkbook.Worksheets("Export").AutoFilter.sort.SortFields.Add2 Key:= _
+        Range("A1"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+        xlSortNormal
+    With ActiveWorkbook.Worksheets("Export").AutoFilter.sort
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+        
+        Cells(1, 6).EntireColumn.Select
+        Selection.Insert
+        Cells(1, 6).EntireColumn.Select
+        Selection.Insert
+        Cells(1, 6).EntireColumn.Select
+        Selection.Insert
+        Cells(1, 6).EntireColumn.Select
+        Selection.Insert
+        Cells(1, 6).EntireColumn.Select
+        Selection.Insert
+        
+      For m = firstrow To lastrow
+        Cells(m, 6).Select
+        ActiveCell.FormulaR1C1 = "=INT(RC[-1])"
+        Cells(1, 6).Value = "Dispatch Day"
+        Cells(m, 7).Select
+        ActiveCell.FormulaR1C1 = "=TODAY()"
+        Cells(1, 7).Value = "Todays Date"
+        Cells(m, 8).Select
+        Application.CutCopyMode = False
+        ActiveCell.FormulaR1C1 = "=RC[-2]-RC[-1]"
+        Selection.NumberFormat = "0.00"
+        Cells(1, 8).Value = "Days til dispatch"
+        Cells(m, 9).Select
+        ActiveCell.FormulaR1C1 = "=TEXT(RC[-2], ""dddd"")"
+        Cells(1, 9).Value = "Today Date DAY"
+        Cells(m, 10).Select
+        ActiveCell.FormulaR1C1 = "=TEXT(RC[-4], ""dddd"")"
+         Cells(1, 10).Value = "Dispatch DAY"
+        ' highlight red
+        If Cells(m, 9).Value = Cells(m, 10).Value Then
+          Cells(m, 5).Select
+          With Selection.Interior
+            .Pattern = xlSolid
+            .PatternColorIndex = xlAutomatic
+            .ThemeColor = xlThemeColorAccent2
+            .TintAndShade = 0.599993896298105
+          .PatternTintAndShade = 0
+          End With
+          With Selection.Font
+            .Color = -16777024
+            .TintAndShade = 0
+          End With
+        'highlight yellow
+        ElseIf Cells(m, 8) = 1 And Cells(m, 9) <> "Friday" Then
+          Cells(m, 5).Select
+          With Selection.Font
+              .ThemeColor = xlThemeColorAccent4
+              .TintAndShade = -0.249977111117893
+          End With
+          With Selection.Interior
+              .Pattern = xlSolid
+              .PatternColorIndex = xlAutomatic
+              .ThemeColor = xlThemeColorAccent4
+              .TintAndShade = 0.799981688894314
+              .PatternTintAndShade = 0
+          End With
+        ElseIf Cells(m, 9) = "Friday" And Cells(m, 8) = 3 Then
+          Cells(m, 5).Select
+          With Selection.Font
+              .ThemeColor = xlThemeColorAccent4
+              .TintAndShade = -0.249977111117893
+          End With
+          With Selection.Interior
+              .Pattern = xlSolid
+              .PatternColorIndex = xlAutomatic
+              .ThemeColor = xlThemeColorAccent4
+              .TintAndShade = 0.799981688894314
+              .PatternTintAndShade = 0
+          End With
+        'highlight green
+        ElseIf Cells(m, 10) = "Saturday" Or Cells(m, 10) = "Sunday" Then
+            Cells(m, 5).Select
+            With Selection.Interior
+                .Pattern = xlSolid
+                .PatternColorIndex = xlAutomatic
+                .ThemeColor = xlThemeColorAccent6
+                .TintAndShade = 0.799981688894314
+                .PatternTintAndShade = 0
+            End With
+            With Selection.Font
+                .ThemeColor = xlThemeColorAccent6
+                .TintAndShade = -0.499984740745262
+            End With
+        End If
+    Next m
+    
+    Cells(1, 6).EntireColumn.Select
+    Selection.Delete
+    Cells(1, 6).EntireColumn.Select
+    Selection.Delete
+    Cells(1, 6).EntireColumn.Select
+    Selection.Delete
+    Cells(1, 6).EntireColumn.Select
+    Selection.Delete
+    Cells(1, 6).EntireColumn.Select
+    Selection.Delete
+    
+    Dim border_rng As Range
+    Set border_rng = Range(Cells(1, 1), Cells(lastrow, 6))
+    border_rng.Activate
+    Selection.Borders(xlDiagonalDown).LineStyle = xlNone
+    Selection.Borders(xlDiagonalUp).LineStyle = xlNone
+    With Selection.Borders(xlEdgeLeft)
+        .LineStyle = xlContinuous
+        .ColorIndex = 0
+        .TintAndShade = 0
+        .Weight = xlThin
+    End With
+    With Selection.Borders(xlEdgeTop)
+        .LineStyle = xlContinuous
+        .ColorIndex = 0
+        .TintAndShade = 0
+        .Weight = xlThin
+    End With
+    With Selection.Borders(xlEdgeBottom)
+        .LineStyle = xlContinuous
+        .ColorIndex = 0
+        .TintAndShade = 0
+        .Weight = xlThin
+    End With
+    With Selection.Borders(xlEdgeRight)
+        .LineStyle = xlContinuous
+        .ColorIndex = 0
+        .TintAndShade = 0
+        .Weight = xlThin
+    End With
+    With Selection.Borders(xlInsideVertical)
+        .LineStyle = xlContinuous
+        .ColorIndex = 0
+        .TintAndShade = 0
+        .Weight = xlThin
+    End With
+    With Selection.Borders(xlInsideHorizontal)
+        .LineStyle = xlContinuous
+        .ColorIndex = 0
+        .TintAndShade = 0
+        .Weight = xlThin
+    End With
+    
+    ' Autofit Column Widths
+    Cells.Select
+    Selection.Columns.AutoFit
+    
+    'Determine how many seconds code took to run
+    SecondsElapsed = Round(Timer - StartTime, 2)
+
+   'Notify user in seconds
+    MsgBox "This code ran successfully in " & SecondsElapsed & " seconds", vbInformation
+    
+    Cells(1, 1).Select
+  
+    
+End Sub

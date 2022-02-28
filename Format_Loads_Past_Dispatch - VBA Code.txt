@@ -1,0 +1,505 @@
+Sub FormatLoadsPastDispatch_Macro()
+'
+' Format_Loads_Dispatch Macro
+'
+'
+
+'If sheet is filtered, clear filter
+If Sheets(1).AutoFilterMode Then Sheet1.AutoFilterMode = False
+
+Dim StartTime As Double
+Dim SecondsElapsed As Double
+StartTime = Timer
+
+Application.ScreenUpdating = False
+
+Dim timezone_lookup_rng As Range
+Dim lookupWS As Worksheet
+Dim firstrow As Integer
+Dim lastrow As Long
+Dim timestamp As Variant
+Dim localtime As Variant
+Dim local_dispatch_DT As Variant
+Dim convert_to_EST As Variant
+Dim dispatch_percentage As Double
+Dim lastrow_whse_sheet As Long
+
+' Message to make sure user wants to run macro
+run_code_yes_no = MsgBox("Do you want to run the Macro?", vbYesNo + vbQuestion + vbDefaultButton1, "Empty Sheet")
+If run_code_yes_no = vbNo Then
+  MsgBox "Exiting code."
+  Exit Sub
+End If
+
+'current_timestamp = FormulaR1C1 = "=NOW()"
+
+' Autofit Column Widths
+Cells.Select
+Selection.Columns.AutoFit
+
+' Change format of dispatch date/time
+Columns("H:H").Select
+Selection.NumberFormat = "m/d/yy h:mm;@"
+
+
+' setting firstrow and finding lastrow
+firstrow = 2
+lastrow = Cells(Rows.Count, 1).End(xlUp).Row
+lastrow = lastrow - 3
+
+Cells(lastrow + 4, 1).Select
+Cells(lastrow + 4, 1).Select
+ActiveCell.FormulaR1C1 = "=NOW()"
+Selection.Copy
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+Selection.NumberFormat = "Time"
+
+    ' Creating sheet to lookup timezones
+    Sheets.Add After:=ActiveSheet
+    Sheets("Sheet1").Select
+    Sheets("Sheet1").Name = "Lookup_TimeZone"
+    Range("A1").Select
+    ActiveCell.FormulaR1C1 = "Advance"
+    Range("B1").Select
+    ActiveCell.FormulaR1C1 = "EST"
+    Range("A2").Select
+    ActiveCell.FormulaR1C1 = "Arcadia"
+    Range("B2").Select
+    ActiveCell.FormulaR1C1 = "CST"
+    Range("A3").Select
+    ActiveCell.FormulaR1C1 = "Ecru"
+    Range("B3").Select
+    ActiveCell.FormulaR1C1 = "CST"
+    Range("A4").Select
+    ActiveCell.FormulaR1C1 = "Etna"
+    Range("B4").Select
+    ActiveCell.FormulaR1C1 = "EST"
+    Range("A5").Select
+    ActiveCell.FormulaR1C1 = "Leesport"
+    Range("B5").Select
+    ActiveCell.FormulaR1C1 = "EST"
+    Range("A6").Select
+    ActiveCell.FormulaR1C1 = "Mesquite"
+    Range("B6").Select
+    ActiveCell.FormulaR1C1 = "CST"
+    Range("A7").Select
+    ActiveCell.FormulaR1C1 = "Redlands"
+    Range("B7").Select
+    ActiveCell.FormulaR1C1 = "PST"
+    Range("A8").Select
+    ActiveCell.FormulaR1C1 = "Saltillo"
+    Range("B8").Select
+    ActiveCell.FormulaR1C1 = "CST"
+    Range("A9").Select
+    ActiveCell.FormulaR1C1 = "Tacoma"
+    Range("B9").Select
+    ActiveCell.FormulaR1C1 = "PST"
+    Range("A10").Select
+
+
+    ' Add sheet for each Warehouse
+    Sheets.Add After:=ActiveSheet
+    Sheets("Sheet2").Select
+    Sheets("Sheet2").Name = "Advance"
+    Sheets.Add After:=ActiveSheet
+    Sheets("Sheet3").Select
+    Sheets("Sheet3").Name = "Arcadia"
+    Sheets.Add After:=ActiveSheet
+    Sheets("Sheet4").Select
+    Sheets("Sheet4").Name = "Ecru"
+    Sheets.Add After:=ActiveSheet
+    Sheets("Sheet5").Select
+    Sheets("Sheet5").Name = "Etna"
+    Sheets.Add After:=ActiveSheet
+    Sheets("Sheet6").Select
+    Sheets("Sheet6").Name = "Leesport"
+    Sheets.Add After:=ActiveSheet
+    Sheets("Sheet7").Select
+    Sheets("Sheet7").Name = "Mesquite"
+    Sheets.Add After:=ActiveSheet
+    Sheets("Sheet8").Select
+    Sheets("Sheet8").Name = "Redlands"
+    Sheets.Add After:=ActiveSheet
+    Sheets("Sheet9").Select
+    Sheets("Sheet9").Name = "Saltillo"
+    Sheets.Add After:=ActiveSheet
+    Sheets("Sheet10").Select
+    Sheets("Sheet10").Name = "Tacoma"
+    
+    ' Setting time zone lookup worksheet
+    Set lookupWS = Worksheets("Lookup_TimeZone")
+
+    Worksheets(2).Activate
+    ' Setting lookup range
+    Set timezone_lookup_rng = lookupWS.Range("A1:B100")
+
+    ' Inserting columns
+    Worksheets(1).Activate
+    Cells(1, 9).EntireColumn.Select
+    Selection.Insert
+    Selection.Insert
+    Selection.Insert
+    Selection.Insert
+    Selection.Insert
+    Selection.Insert
+    Selection.Insert
+    Selection.Insert
+    
+    
+    ' Labeling cells for stepping through code (CAN DELETE OR COMMENT OUT)
+    Cells(1, 9).Value = "Time Zone"
+    Cells(1, 10).Value = "Converted to EST Time"
+    Cells(1, 11).Value = "Greater Than 4 Hours from current timestamp"
+    Cells(1, 11).EntireColumn.Select
+    Selection.NumberFormat = "General"
+    Cells(1, 14).Value = "Todays Date"
+    Cells(1, 15).Value = "Load Dispatch Date"
+    
+    
+    Columns("M:M").Select
+    Selection.NumberFormat = "0.00"
+    
+'        Selection.Copy
+'    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+'        :=False, Transpose:=False
+'    Range("N2").Select
+'    Application.CutCopyMode = False
+'    ActiveCell.FormulaR1C1 = "=TODAY()-1"
+'    Range("N2").Select
+'    Selection.NumberFormat = "General"
+'    Selection.NumberFormat = "m/d/yyyy"
+'    Range("P2").Select
+'    ActiveCell.FormulaR1C1 = "=NUMBERVALUE(RC[-2])=NUMBERVALUE(RC[-1])"
+'    Range("P3").Select
+'
+    
+     ' Filter Dispatch Date Time Oldest to Newest
+     Cells(1, 1).EntireRow.Select
+     Selection.AutoFilter
+    ActiveWorkbook.Worksheets("Export").AutoFilter.Sort.SortFields.Clear
+    ActiveWorkbook.Worksheets("Export").AutoFilter.Sort.SortFields.Add2 Key:= _
+        Range("H1:H10000"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+        xlSortNormal
+    With ActiveWorkbook.Worksheets("Export").AutoFilter.Sort
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+    
+     'Sort_Warehouse_A_to_Z
+    ActiveWorkbook.Worksheets("Export").AutoFilter.Sort.SortFields.Clear
+    ActiveWorkbook.Worksheets("Export").AutoFilter.Sort.SortFields.Add2 Key:= _
+        Range("A1:A10000"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+        xlSortNormal
+    With ActiveWorkbook.Worksheets("Export").AutoFilter.Sort
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+    
+    
+    ' For loop to format row, then copy and paste to corresponding warehouse sheet
+    For i = firstrow To lastrow
+    
+      Sheets("Export").Select
+      
+      ' Looking up timezone
+      dispatch_percentage = Cells(i, 13).Value
+      Cells(i, 12) = Cells(lastrow + 4, 1).Value
+      warehouse_lookup = Cells(i, 1).Value
+      warehouse_timezone = Application.WorksheetFunction.IfError(Application.VLookup(warehouse_lookup, timezone_lookup_rng, 2, False), 0)
+      Cells(i, 9).Value = warehouse_timezone
+      
+      ' Enter in todays date
+      Cells(i, 14).Select
+      ActiveCell.FormulaR1C1 = "=TODAY()"
+      Selection.NumberFormat = "General"
+      Selection.NumberFormat = "m/d/yyyy"
+      
+      ' converting to EST
+      local_dispatch_DT = Cells(i, 8).Value
+            If Cells(i, 9).Value = "CST" Then
+        local_dispatch_DT = local_dispatch_DT + (1 / 24)
+      End If
+      If Cells(i, 9).Value = "PST" Then
+        local_dispatch_DT = local_dispatch_DT + (2 / 24)
+      End If
+      
+      Cells(i, 10).Value = local_dispatch_DT
+      
+      ' Load Dispatch Date
+      Cells(i, 15).Select
+      ActiveCell.FormulaR1C1 = "=MONTH(RC[-5])&""/""&DAY(RC[-5])&""/""&YEAR(RC[-5])"
+      Range("O3").Select
+      
+      
+      Columns("P:P").Select
+      Selection.NumberFormat = "General"
+      Cells(i, 16).Select
+      ActiveCell.FormulaR1C1 = "=NUMBERVALUE(RC[-2])=NUMBERVALUE(RC[-1])"
+      Cells(i, 16).Select
+      Selection.Copy
+      Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+      
+      
+      
+      Cells(i, 11).Select
+      ActiveCell.FormulaR1C1 = "=RC[-1]-RC[1]"
+      Cells(i, 13).Select
+      Selection.Copy
+      Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+      
+      ' number value of % complete
+      ActiveCell.FormulaR1C1 = "=NUMBERVALUE(RC[5])"
+      Cells(i, 11).Value = Cells(i, 11).Value * 24
+      Cells(i, 11).Select
+      Selection.Copy
+      Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+
+      'Highlight Red or Yellow
+      If Cells(i, 13).Value = 0 And Cells(i, 11).Value <= 4 Then
+        Cells(i, 7).EntireRow.Select
+        With Selection.Interior
+          .Pattern = xlSolid
+          .PatternColorIndex = xlAutomatic
+          .Color = 255
+          .TintAndShade = 0
+          .PatternTintAndShade = 0
+        End With
+      ElseIf Trim(Cells(i, 16).Value) = "True" And Cells(i, 13).Value = 0 Then
+        Cells(i, 7).EntireRow.Select
+        With Selection.Interior
+          .Pattern = xlSolid
+          .PatternColorIndex = xlAutomatic
+          .Color = 65535
+          .TintAndShade = 0
+          .PatternTintAndShade = 0
+        End With
+      End If
+
+      ' Font color red
+      If Cells(i, 11).Value < 0 And Cells(i, 13).Value <> 0 Then
+      Cells(i, 7).EntireRow.Select
+        With Selection.Font
+          .Color = -16776961
+          .TintAndShade = 0
+        End With
+      End If
+      
+      ' Copy row to paste onto other sheet
+      Cells(i, 1).EntireRow.Select
+      Selection.Copy
+      
+      ' Paste row to another sheet
+      If Cells(i, 1).Value = "Advance" And Cells(i, 5).Value <> "P" And Cells(i, 5).Value <> "Y" Then
+       ' Selection.Copy
+        Sheets("Advance").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      ElseIf Cells(i, 1).Value = "Arcadia" And Cells(i, 5).Value <> "P" And Cells(i, 5).Value <> "Y" Then
+       ' Selection.Copy
+        Sheets("Arcadia").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      ElseIf Cells(i, 1).Value = "Ecru" And Cells(i, 5).Value <> "P" And Cells(i, 5).Value <> "Y" Then
+       ' Selection.Copy
+        Sheets("Ecru").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      ElseIf Cells(i, 1).Value = "Etna" And Cells(i, 5).Value <> "P" And Cells(i, 5).Value <> "Y" Then
+       ' Selection.Copy
+        Sheets("Etna").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      ElseIf Cells(i, 1).Value = "Leesport" And Cells(i, 5).Value <> "P" And Cells(i, 5).Value <> "Y" Then
+       ' Selection.Copy
+        Sheets("Leesport").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      ElseIf Cells(i, 1).Value = "Mesquite" And Cells(i, 5).Value <> "P" And Cells(i, 5).Value <> "Y" Then
+       ' Selection.Copy
+        Sheets("Mesquite").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      ElseIf Cells(i, 1).Value = "Redlands" And Cells(i, 5).Value <> "P" And Cells(i, 5).Value <> "Y" Then
+       ' Selection.Copy
+        Sheets("Redlands").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      ElseIf Cells(i, 1).Value = "Saltillo" And Cells(i, 5).Value <> "P" And Cells(i, 5).Value <> "Y" Then
+       ' Selection.Copy
+        Sheets("Saltillo").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      ElseIf Cells(i, 1).Value = "Tacoma" And Cells(i, 5).Value <> "P" And Cells(i, 5).Value <> "Y" Then
+       ' Selection.Copy
+        Sheets("Tacoma").Select
+        lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(lastrow_whse_sheet + 1, 1).Select
+        ActiveSheet.Paste
+      End If
+    Next i
+    
+     
+   Sheets("Export").Activate
+     
+  ' Delete unneeded columns on all sheets
+  ' nested for loop
+  For k = 3 To 11
+    Sheets(k).Activate
+    lastrow_whse_sheet = Cells(Rows.Count, 1).End(xlUp).Row
+    If lastrow_whse_sheet > 1 Then
+      For j = 9 To 16
+       Cells(1, 9).EntireColumn.Select
+       Selection.Delete
+      'Filter out trip type P & Y
+       ActiveSheet.Range("$A$1:$N$10000").AutoFilter Field:=5, Criteria1:=Array("F", _
+       "R", "T", "="), Operator:=xlFilterValues
+      Next j
+    End If
+  Next k
+  
+  Sheets("Export").Activate
+  For m = 1 To 8
+    Cells(1, 9).EntireColumn.Select
+    Selection.Delete
+  Next m
+  
+  ' Copy and paste header row onto every sheet
+    Cells(1, 1).Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Selection.Copy
+    Sheets("Advance").Select
+    Range("A1").Select
+    ActiveSheet.Paste
+    Sheets("Arcadia").Select
+    Range("A1").Select
+    ActiveSheet.Paste
+    Sheets("Ecru").Select
+    Range("A1").Select
+    ActiveSheet.Paste
+    Sheets("Etna").Select
+    Range("A1").Select
+    ActiveSheet.Paste
+    Sheets("Leesport").Select
+    Range("A1").Select
+    ActiveSheet.Paste
+    Sheets("Mesquite").Select
+    Range("A1").Select
+    ActiveSheet.Paste
+    Sheets("Redlands").Select
+    Range("A1").Select
+    ActiveSheet.Paste
+    Sheets("Saltillo").Select
+    Range("A1").Select
+    ActiveSheet.Paste
+    Sheets("Tacoma").Select
+    Range("A1").Select
+    ActiveSheet.Paste
+    
+    ' Delete latest delivery date and cubes columns
+    For t = 3 To 11
+       Sheets(t).Activate
+       Cells(1, 9).EntireColumn.Select
+       Selection.Delete
+       Cells(1, 14).EntireColumn.Select
+       Selection.Delete
+    Next t
+     
+     ' Delete latest delivery date and cubes columns on Export Sheet
+     Sheets("Export").Activate
+     Cells(1, 9).EntireColumn.Select
+     Selection.Delete
+     Cells(1, 14).EntireColumn.Select
+     Selection.Delete
+  
+    
+    ' Clean Export Sheet (Clear formatting)
+    Sheets("Export").Select
+    Range("A1:Z10000").Select
+    Range("A28").Activate
+    With Selection.Font
+        .ColorIndex = xlAutomatic
+        .TintAndShade = 0
+    End With
+    With Selection.Interior
+        .Pattern = xlSolid
+        .PatternColorIndex = xlAutomatic
+        .ThemeColor = xlThemeColorDark1
+        .TintAndShade = 0
+        .PatternTintAndShade = 0
+    End With
+    Range(Cells(lastrow + 1, 1), Cells(lastrow + 4, 50)).Select
+    Selection.Delete Shift:=xlUp
+    
+ 'Clear Filters
+    For n = 3 To 11
+      Sheets(n).Select
+      Rows("1:1").Select
+      Selection.AutoFilter
+    Next n
+ 
+ 'Clear fill (to show gridlines)
+ 'For q = 1 To 11
+  Sheets(1).Select
+  Selection.Activate
+     Cells.Select
+     Range("A2").Activate
+     With Selection.Interior
+         .Pattern = xlNone
+         .TintAndShade = 0
+         .PatternTintAndShade = 0
+     End With
+ ' Next q
+ 
+ 
+ 'Autofit all sheets column widths, Bold first row, freezepane, Select cell A1 on every sheet, clear all filters
+ For r = 1 To 11
+  Sheets(r).Select
+  Cells.Select
+  Cells.EntireColumn.AutoFit
+  Rows("1:1").Select
+  Selection.Font.Bold = True
+  Rows("2:2").Select
+  ActiveWindow.FreezePanes = True
+  Cells(1, 1).EntireRow.Select
+  If Sheets(r).AutoFilterMode Then Sheet1.AutoFilterMode = False
+  Cells(1, 1).Select
+ Next r
+ 
+ Sheets(1).Select
+ Range("E1").Select
+    ActiveSheet.Range("$A$1:$O$10000").AutoFilter Field:=5, Criteria1:=Array("F", _
+        "R", "T"), Operator:=xlFilterValues
+        
+  'Hide TimeZone sheet
+  Sheets("Lookup_TimeZone").Select
+    ActiveWindow.SelectedSheets.Visible = False
+    
+  ' Activate A1 on Export Sheet
+  Sheets("Export").Select
+  Cells(1, 1).Select
+  
+  'Determine how many seconds code took to run
+  SecondsElapsed = Round(Timer - StartTime, 2)
+
+  'Notify user in seconds
+  MsgBox "This code ran successfully in " & SecondsElapsed & " seconds", vbInformation
+  
+End Sub

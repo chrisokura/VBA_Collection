@@ -1,0 +1,412 @@
+Public firstrow As Integer
+Public lastrow As Long
+Public ost As Integer
+Public dSt As Integer
+Public oZip As Integer
+Public dZip As Integer
+Public lastcol As Integer
+Public BidWB As Workbook
+Public CompanyName As String
+Public miles_col As Integer
+Public vol_col As Integer
+Public laneID_col As Integer
+Public equip_col As Integer
+Public type_col As Integer
+Public t As Integer
+
+Sub FormatBidTemplate()
+
+'Dim password As String
+' password = InputBox("Enter Password")
+'If password <> "Wilson2021!" Then
+ ' MsgBox "Incorrect password, code not executed"
+  'Exit Sub
+' End If
+
+Set BidWB = Workbooks("Wilson Bid Template - CO.xlsm")
+
+firstrow = 6
+Cells(6, 3).Select
+lastrow = Cells(Rows.Count, 1).End(xlUp).Row
+lastcol = Cells(5, Columns.Count).End(xlToLeft).Column
+
+
+' Code Inputs
+laneID_col = Cells(2, 8).Value
+ost = Cells(2, 9).Value
+dSt = Cells(2, 10).Value
+oZip = Cells(2, 11).Value
+dZip = Cells(2, 12).Value
+miles_col = Cells(2, 13).Value
+vol_col = Cells(2, 14).Value
+equip_col = Cells(2, 15).Value
+type_col = Cells(2, 16).Value
+CompanyName = Cells(2, 17).Value
+
+
+If ost = 0 Or dSt = 0 Or dZip = 0 Or oZip = 0 Or miles_col = 0 Then
+  MsgBox "OSt, DSt, OZip, DZip, and Miles need to be entered before running code. Exited Code."
+  Exit Sub
+End If
+
+If CompanyName = "N/A" Then
+  MsgBox "Enter CompanyName before running code. Exited Code."
+  Exit Sub
+End If
+  
+bid_master_yes_no = MsgBox("Add to Bid Master?", vbYesNo + vbQuestion + vbDefaultButton1, "Empty Sheet")
+If bid_master_yes_no = vbYes Then
+  Call Bid_Master
+End If
+
+BidWB.Activate
+
+If ActiveSheet.AutoFilterMode Then ActiveSheet.AutoFilterMode = False
+
+Dim StartTime As Double
+Dim SecondsElapsed As Double
+StartTime = Timer
+
+Application.ScreenUpdating = False
+Application.Calculation = xlCalculationManual
+
+Dim answer As String
+Dim ozip_lookup As String, oarea As String
+Dim p_oarea As String, p_darea As String
+Dim lookupWS As Worksheet
+Dim oarea_rng As Range
+Dim parea_rng As Range
+Dim grn_rng As Range
+Dim blue_rng As Range
+Dim yellow_rng As Range
+Dim orange_rng As Range
+Dim border_rng As Range
+Set lookupWS = Worksheets("Sheet1")
+Set oarea_rng = lookupWS.Range("A1:E50000")
+Set parea_rng = lookupWS.Range("I4:M50000")
+
+On Error Resume Next
+Selection.AutoFilter
+
+'ActiveWorkbook.Worksheets("Bid").AutoFilter.Sort.SortFields.Clear
+Cells(firstrow, 1).AutoFilter
+
+Set grn_rng = Range(Cells(firstrow - 1, lastcol + 1), Cells(lastrow, lastcol + 1))
+Set blue_rng = Range(Cells(firstrow - 2, lastcol + 2), Cells(lastrow, lastcol + 3))
+Set yellow_rng = Range(Cells(firstrow - 2, lastcol + 4), Cells(lastrow, lastcol + 5))
+Set orange_rng = Range(Cells(firstrow - 2, lastcol + 6), Cells(lastrow, lastcol + 7))
+Set border_rng = Range(Cells(firstrow - 1, lastcol + 1), Cells(lastrow, lastcol + 7))
+
+
+'answer = MsgBox("Are origin AND destination zips provided?", vbQuestion + vbYesNo + vbDefaultButton2, "Message Box Title")
+'MsgBox answer
+
+'ost = InputBox("Enter Column of Origin State (eg: Column A = 1, Column B = 2)")
+'If ost = 0 Then
+'  MsgBox "Exited"
+'  Exit Sub
+'End If
+'dSt = InputBox("Enter Column of Destination State (eg: Column A = 1, Column B = 2) ")
+'If dSt = 0 Then
+'  MsgBox "Exited"
+'  Exit Sub
+'End If
+'oZip = InputBox("Enter Column of Origin Zip (eg: Column A = 1, Column B = 2)")
+'If oZip = 0 Then
+'  MsgBox "Exited"
+'  Exit Sub
+'End If
+'dZip = InputBox("Enter Column of Destination Zip (eg: Column A = 1, Column B = 2)")
+'If dZip = 0 Then
+'  MsgBox "Exited"
+'  Exit Sub
+'End If
+'miles_col = InputBox("Enter Column of Miles (eg: Column A = 1, Column B = 2)")
+'If miles_col = 0 Then
+'  MsgBox "Exited"
+'  Exit Sub
+''End If
+'
+'vol_col = InputBox("Enter Column of customer volume (eg: Column A = 1, Column B = 2)")
+'laneID_col = InputBox("Enter Column of Lane ID (eg: Column A = 1, Column B = 2)")
+'equip_col = InputBox("Enter Column of customer equipment (Dry/Reefer/Etc) or 0 if N/A")
+
+'CompanyName = InputBox("Enter CompanyName")
+
+
+Cells(firstrow, oZip).EntireColumn.Select
+Selection.Insert
+Cells(firstrow, oZip + 1).EntireColumn.Select
+Selection.Insert
+
+Cells(firstrow, dZip + 2).EntireColumn.Select
+Selection.Insert
+Cells(firstrow, dZip + 3).EntireColumn.Select
+Selection.Insert
+
+
+' Origin area lookup
+For i = firstrow To lastrow
+  ozip_lookup = Cells(i, oZip + 2).Value
+  Dim error_val As String
+  error_val = Cells(i, ost).Value
+  oarea = Application.WorksheetFunction.IfError(Application.VLookup(Left(ozip_lookup, 3), oarea_rng, 5, False), error_val)
+  Cells(i, oZip).Value = oarea
+
+Next i
+
+'Destination area lookup
+For i = firstrow To lastrow
+  dzip_lookup = Cells(i, dZip + 4).Value
+  Cells(i, dSt + 4).Select
+  error_val = Cells(i, dSt + 2).Value
+  darea = Application.WorksheetFunction.IfError(Application.VLookup(Left(dzip_lookup, 3), oarea_rng, 5, False), error_val)
+  Cells(i, dZip + 2).Value = darea
+Next i
+
+
+' Pricing origin area lookup
+For i = firstrow To lastrow
+  ozip_lookup = Cells(i, oZip + 2).Value
+  p_oarea = Application.WorksheetFunction.IfError(Application.VLookup(Left(ozip_lookup, 3), parea_rng, 5, False), 0)
+  'p_oarea = Application.VLookup(ozip_lookup, parea_rng, 5, False)
+  Cells(i, oZip + 1).Value = p_oarea
+Next i
+
+For i = firstrow To lastrow
+  Cells(i, oZip + 1).Select
+  p_oarea = Cells(i, oZip + 1).Value
+  If p_oarea = "0" Then
+    Cells(i, oZip + 1).Value = ""
+  End If
+Next i
+    
+'Pricing Destination area Lookup
+For i = firstrow To lastrow
+  Cells(i, dZip + 3).Select
+  dzip_lookup = Cells(i, dZip + 4).Value
+  p_darea = Application.WorksheetFunction.IfError(Application.VLookup(Left(dzip_lookup, 3), parea_rng, 5, False), 0)
+  'p_darea = Application.VLookup(dzip_lookup, parea_rng, 5, False)
+  Cells(i, dZip + 3).Value = p_darea
+Next i
+
+For i = firstrow To lastrow
+  Cells(i, dZip + 3).Select
+  p_darea = Cells(i, dZip + 3).Value
+  If p_darea = "0" Then
+    Cells(i, dZip + 3).Value = ""
+  End If
+Next i
+
+'' Adding in areas to BidMaster
+If bid_master_yes_no = vbYes Then
+  Call Bid_Master2
+End If
+
+BidWB.Activate
+
+'' Filter needed for sorts later.
+Dim flt_rng As Range
+Set flt_rng = Range(Cells(firstrow - 1, 1), Cells(firstrow - 1, lastcol + 4))
+flt_rng.Select
+Selection.AutoFilter
+
+Cells(firstrow - 1, lastcol + 5).Select
+
+grn_rng.Interior.Color = RGB(191, 236, 182)
+blue_rng.Interior.Color = RGB(217, 225, 242)
+yellow_rng.Interior.Color = RGB(255, 242, 204)
+orange_rng.Interior.Color = RGB(248, 203, 173)
+border_rng.Borders.LineStyle = xlContinuous
+
+Dim o As Range
+Dim p As Range
+Set o = Range(Cells(firstrow - 1, ost + 1), Cells(lastrow, ost + 2))
+Set p = Range(Cells(firstrow - 1, dSt + 3), Cells(lastrow, dSt + 4))
+o.Interior.ColorIndex = 15
+p.Interior.ColorIndex = 15
+
+
+'Label Cells
+Cells(firstrow - 1, ost + 1).Value = "O Area"
+Cells(firstrow - 1, ost + 2).Value = "P O Area"
+Cells(firstrow - 1, dSt + 3).Value = "D Area"
+Cells(firstrow - 1, dSt + 4).Value = "P D Area"
+Cells(firstrow - 1, lastcol + 5).Value = "Keep?"
+Cells(firstrow - 1, lastcol + 6).Value = "RPM"
+Cells(firstrow - 1, lastcol + 7).Value = "MIN"
+Cells(firstrow - 1, lastcol + 8).Value = "RPM"
+Cells(firstrow - 1, lastcol + 9).Value = "MIN"
+Cells(firstrow - 1, lastcol + 10).Value = "RPM"
+Cells(firstrow - 1, lastcol + 11).Value = "MIN"
+
+Cells(firstrow - 2, lastcol + 6) = "Pricing"
+Range(Cells(firstrow - 2, lastcol + 6), Cells(firstrow - 2, lastcol + 7)).Merge
+Range(Cells(firstrow - 2, lastcol + 6), Cells(firstrow - 2, lastcol + 7)).HorizontalAlignment = xlCenterAcrossSelection
+'Range(Cells(firstrow - 2, lastcol + 6), Cells(firstrow - 2, lastcol + 7)).VerticalAlignment = xlCenter
+
+
+Cells(firstrow - 2, lastcol + 8) = "Sales"
+Range(Cells(firstrow - 2, lastcol + 8), Cells(firstrow - 2, lastcol + 9)).Merge
+Range(Cells(firstrow - 2, lastcol + 8), Cells(firstrow - 2, lastcol + 9)).HorizontalAlignment = xlCenterAcrossSelection
+
+Cells(firstrow - 2, lastcol + 10) = "Submission"
+Range(Cells(firstrow - 2, lastcol + 10), Cells(firstrow - 2, lastcol + 11)).Merge
+Range(Cells(firstrow - 2, lastcol + 10), Cells(firstrow - 2, lastcol + 11)).HorizontalAlignment = xlCenterAcrossSelection
+
+Cells(firstrow, ost + 3).EntireColumn.Select
+Selection.Insert
+Cells(firstrow, dSt + 6).EntireColumn.Select
+Selection.Insert
+Selection.Insert
+
+Dim rank_rng As Range
+Set rank_rng = lookupWS.Range("Q4:R2000")
+Dim rank As String, rank2 As String
+For i = firstrow To lastrow
+  rank = Application.WorksheetFunction.IfError(Application.VLookup(Cells(i, ost + 2).Value, rank_rng, 2, False), 3)
+  Cells(i, ost + 3).Value = rank
+  rank2 = Application.WorksheetFunction.IfError(Application.VLookup(Cells(i, dSt + 5).Value, rank_rng, 2, False), 3)
+  Cells(i, dSt + 6).Value = rank2
+  Cells(i, dSt + 7).Value = rank & rank2
+  If Cells(i, dSt + 7).Value = 11 Then
+    Range(Cells(i, ost + 1), Cells(i, ost + 2)).Interior.Color = RGB(217, 225, 242)
+    Range(Cells(i, dSt + 4), Cells(i, dSt + 5)).Interior.Color = RGB(217, 225, 242)
+  ElseIf Cells(i, dSt + 7).Value = 12 Or Cells(i, dSt + 7).Value = 21 Or Cells(i, dSt + 7).Value = 22 Then
+    Range(Cells(i, ost + 1), Cells(i, ost + 2)).Interior.Color = RGB(255, 242, 204)
+    Range(Cells(i, dSt + 4), Cells(i, dSt + 5)).Interior.Color = RGB(255, 242, 204)
+  End If
+Next i
+
+BidWB.Activate
+'Sort by miles
+Dim miles_rng As Range
+Set miles_rng = Range(Cells(firstrow - 1, miles_col + 7), Cells(lastrow, miles_col + 7))
+ActiveWorkbook.Worksheets("Bid").AutoFilter.sort.SortFields.Clear
+ActiveWorkbook.Worksheets("Bid").AutoFilter.sort.SortFields.Add2 Key:=miles_rng, SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+    xlSortNormal
+With ActiveWorkbook.Worksheets("Bid").AutoFilter.sort
+    .Header = xlYes
+    .MatchCase = False
+    .Orientation = xlTopToBottom
+    .SortMethod = xlPinYin
+    .Apply
+End With
+
+'' Sort by P D Area
+Dim ColumnNumber As Long
+Dim ColumnLetter As String
+Dim str As String
+
+'Input Column Number
+ColumnNumber = dSt + 5
+
+'Convert To Column Letter
+ColumnLetter = Split(Cells(1, ColumnNumber).Address, "$")(1)
+
+str = ColumnLetter & 5
+ActiveWorkbook.Worksheets("Bid").AutoFilter.sort.SortFields.Clear
+ActiveWorkbook.Worksheets("Bid").AutoFilter.sort.SortFields.Add2 Key:=Range( _
+    str), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+    xlSortNormal
+With ActiveWorkbook.Worksheets("Bid").AutoFilter.sort
+    .Header = xlYes
+    .MatchCase = False
+    .Orientation = xlTopToBottom
+    .SortMethod = xlPinYin
+    .Apply
+  End With
+
+
+'' Sort by P O Area
+ColumnNumber = ost + 2
+ColumnLetter = Split(Cells(1, ColumnNumber).Address, "$")(1)
+str = ColumnLetter & 5
+    ActiveWorkbook.Worksheets("Bid").AutoFilter.sort.SortFields.Clear
+  ActiveWorkbook.Worksheets("Bid").AutoFilter.sort.SortFields.Add2 Key:=Range( _
+      str), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+      xlSortNormal
+  With ActiveWorkbook.Worksheets("Bid").AutoFilter.sort
+      .Header = xlYes
+      .MatchCase = False
+      .Orientation = xlTopToBottom
+      .SortMethod = xlPinYin
+      .Apply
+  End With
+
+'' Sort by color
+Application.CutCopyMode = False
+Dim color_sort_rng As String
+color_sort_rng = str & ":" & ColumnLetter & lastrow
+
+ActiveWorkbook.Worksheets("Bid").AutoFilter.sort.SortFields.Clear
+ActiveWorkbook.Worksheets("Bid").AutoFilter.sort.SortFields.Add(Range( _
+    color_sort_rng), xlSortOnCellColor, xlAscending, , xlSortNormal).SortOnValue.Color _
+    = RGB(255, 242, 204)
+With ActiveWorkbook.Worksheets("Bid").AutoFilter.sort
+    .Header = xlYes
+    .MatchCase = False
+    .Orientation = xlTopToBottom
+    .SortMethod = xlPinYin
+    .Apply
+End With
+
+ActiveWorkbook.Worksheets("Bid").AutoFilter.sort.SortFields.Clear
+ActiveWorkbook.Worksheets("Bid").AutoFilter.sort.SortFields.Add(Range( _
+   color_sort_rng), xlSortOnCellColor, xlAscending, , xlSortNormal).SortOnValue.Color = RGB(217 _
+    , 225, 242)
+With ActiveWorkbook.Worksheets("Bid").AutoFilter.sort
+    .Header = xlYes
+    .MatchCase = False
+    .Orientation = xlTopToBottom
+    .SortMethod = xlPinYin
+    .Apply
+End With
+
+Cells(firstrow, ost + 3).EntireColumn.Select
+Selection.Delete
+Cells(firstrow, dSt + 5).EntireColumn.Select
+Selection.Delete
+Cells(firstrow, dSt + 5).EntireColumn.Select
+Selection.Delete
+
+Dim brd_rng As Range
+Set brd_rng = Range(Cells(5, 1), Cells(lastrow, lastcol + 11))
+brd_rng.Select
+Selection.Borders.LineStyle = xlContinuous
+
+Selection.AutoFilter
+Dim filter_rng As Range
+Set filter_rng = Range(Cells(firstrow - 1, 1), Cells(firstrow - 1, lastcol + 11))
+filter_rng.Select
+Selection.AutoFilter
+'Cells(firstrow, 1).Select
+
+Cells(1, 6).Value = "BID"
+Cells(1, 6).Select
+Selection.Font.Bold = True
+Cells(2, 6).Value = CompanyName
+
+'Clearing inputs in rows 1 and 2
+For i = 1 To 2
+  For j = 8 To 21
+    Cells(i, j).Clear
+  Next j
+Next i
+
+
+'border range
+Call border
+
+Application.Calculation = xlCalculationAutomatic
+
+'Determine how many seconds code took to run
+  SecondsElapsed = Round(Timer - StartTime, 2)
+
+'Notify user in seconds
+  MsgBox "This code ran successfully in " & SecondsElapsed & " seconds", vbInformation
+
+
+End Sub
+
+

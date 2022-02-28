@@ -1,0 +1,194 @@
+Sub Out_Full_Trailers_Daily()
+    
+  Dim StartTime As Double
+  Dim SecondsElapsed As Double
+  Dim lastrow As Long
+  Dim firstrow As Integer
+  Dim carrier As String
+  StartTime = Timer
+  
+  
+  'Application.ScreenUpdating = False
+  
+  'If sheet is filtered, clear filter
+  If Sheets(1).AutoFilterMode Then Sheet1.AutoFilterMode = False
+
+  ' setting firstrow and finding lastrow
+  firstrow = 2
+  lastrow = Cells(Rows.Count, 1).End(xlUp).Row
+  lastrow = lastrow - 2
+  Cells(lastrow + 2, 1).EntireRow.Select
+  Selection.Delete
+
+   ' bold first row and apply filters
+    Cells(1, 1).Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Selection.Font.Bold = True
+    'Selection.AutoFilter
+
+    ' Autofit columns, center align all columns except for col A
+    Columns("A:M").Select
+    Selection.Columns.AutoFit
+    Columns("B:M").Select
+    With Selection
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlBottom
+        .WrapText = False
+        .Orientation = 0
+        .AddIndent = False
+        .IndentLevel = 0
+        .ShrinkToFit = False
+        .ReadingOrder = xlContext
+        .MergeCells = False
+    End With
+    
+    'format column G
+    Columns("G:G").Select
+    Range("G5").Activate
+    Selection.NumberFormat = "m/d/yy h:mm;@"
+    
+    ' Sort col D oldest to newest, sort col c A to Z
+    Rows("1:1").Select
+    Selection.AutoFilter
+  
+    Range("E1").Activate
+    ActiveWorkbook.Worksheets("Export").AutoFilter.sort.SortFields.Clear
+    ActiveWorkbook.Worksheets("Export").AutoFilter.sort.SortFields.Add2 Key:= _
+        Range("D1"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+        xlSortNormal
+    With ActiveWorkbook.Worksheets("Export").AutoFilter.sort
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+    ActiveWorkbook.Worksheets("Export").AutoFilter.sort.SortFields.Clear
+    ActiveWorkbook.Worksheets("Export").AutoFilter.sort.SortFields.Add2 Key:= _
+        Range("C1"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+        xlSortNormal
+    With ActiveWorkbook.Worksheets("Export").AutoFilter.sort
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+      'insert cols
+      Columns("E:E").Select
+      Selection.Insert Shift:=xlToRight
+      Selection.Insert Shift:=xlToRight
+    
+    For i = firstrow To lastrow
+      Selection.End(xlUp).Select
+      Cells(i, 5).Select
+      ActiveCell.FormulaR1C1 = "=TODAY()"
+      Cells(i, 6).Select
+      Selection.NumberFormat = "0.00"
+      Application.CutCopyMode = False
+      ActiveCell.FormulaR1C1 = "=RC[-1]-RC[-2]"
+      If Cells(i, 6).Value = 1 Then
+         Cells(i, 4).Select
+        With Selection.Interior
+          .Pattern = xlSolid
+          .PatternColorIndex = xlAutomatic
+          .Color = 5296274
+          .TintAndShade = 0
+          .PatternTintAndShade = 0
+         End With
+    With Selection.Font
+        .ThemeColor = xlThemeColorAccent6
+        .TintAndShade = -0.499984740745262
+    End With
+      
+      'highlight yellow
+     ElseIf Cells(i, 6).Value < 7 Then
+      Cells(i, 4).Select
+      With Selection.Font
+          .ThemeColor = xlThemeColorAccent4
+          .TintAndShade = -0.249977111117893
+      End With
+      With Selection.Interior
+          .Pattern = xlSolid
+          .PatternColorIndex = xlAutomatic
+          .ThemeColor = xlThemeColorAccent4
+          .TintAndShade = 0.799981688894314
+          .PatternTintAndShade = 0
+      End With
+    ElseIf Cells(i, 6).Value >= 7 Then
+        Cells(i, 4).Select
+        With Selection.Interior
+          .Pattern = xlSolid
+          .PatternColorIndex = xlAutomatic
+          .Color = 8224255
+          .TintAndShade = 0
+          .PatternTintAndShade = 0
+        End With
+        With Selection.Font
+          .Color = -16777024
+          .TintAndShade = 0
+        End With
+      End If
+    Next i
+    
+    
+    Cells(1, 5).EntireColumn.Select
+    Selection.Delete
+    Cells(1, 5).EntireColumn.Select
+    Selection.Delete
+    
+    Dim border_rng As Range
+    Set border_rng = Range(Cells(1, 1), Cells(lastrow, 13))
+    border_rng.Select
+    Selection.Borders(xlDiagonalDown).LineStyle = xlNone
+    Selection.Borders(xlDiagonalUp).LineStyle = xlNone
+    With Selection.Borders(xlEdgeLeft)
+        .LineStyle = xlContinuous
+        .ColorIndex = 0
+        .TintAndShade = 0
+        .Weight = xlThin
+    End With
+    With Selection.Borders(xlEdgeTop)
+        .LineStyle = xlContinuous
+        .ColorIndex = 0
+        .TintAndShade = 0
+        .Weight = xlThin
+    End With
+    With Selection.Borders(xlEdgeBottom)
+        .LineStyle = xlContinuous
+        .ColorIndex = 0
+        .TintAndShade = 0
+        .Weight = xlThin
+    End With
+    With Selection.Borders(xlEdgeRight)
+        .LineStyle = xlContinuous
+        .ColorIndex = 0
+        .TintAndShade = 0
+        .Weight = xlThin
+    End With
+    With Selection.Borders(xlInsideVertical)
+        .LineStyle = xlContinuous
+        .ColorIndex = 0
+        .TintAndShade = 0
+        .Weight = xlThin
+    End With
+    With Selection.Borders(xlInsideHorizontal)
+        .LineStyle = xlContinuous
+        .ColorIndex = 0
+        .TintAndShade = 0
+        .Weight = xlThin
+    End With
+    
+    
+    Rows("2:2").Select
+    ActiveWindow.FreezePanes = True
+    Cells(1, 1).Select
+    'Determine how many seconds code took to run
+    SecondsElapsed = Round(Timer - StartTime, 2)
+  
+    'Notify user in seconds
+    MsgBox "This code ran successfully in " & SecondsElapsed & " seconds", vbInformation
+  
+  
+    
+End Sub
